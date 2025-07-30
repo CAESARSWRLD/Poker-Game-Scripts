@@ -31,7 +31,7 @@ public class MoveCards : MonoBehaviour
 
         Vector3 upOffset = new Vector3(0, offset, 0);
 
-        Debug.Log(p.card1.cardObject + " and " + p.card2.cardObject + " are being highlighted for player");
+        //Debug.Log(p.card1.cardObject + " and " + p.card2.cardObject + " are being highlighted for player");
 
         // Start both highlight coroutines
         StartCoroutine(HighlightBounce(p.card1.cardObject, upOffset, duration));
@@ -50,13 +50,13 @@ public class MoveCards : MonoBehaviour
         Vector3 originalPos = cardObject.transform.position;
         Vector3 targetPos = originalPos + offset;
 
-        // Move up
+        //up
         yield return StartCoroutine(MoveCard(cardObject, targetPos, duration));
 
-        // Optional pause at top
+        //pause at top
         yield return new WaitForSeconds(0.05f);
 
-        // Move back down
+        //down
         yield return StartCoroutine(MoveCard(cardObject, originalPos, duration));
     }
 
@@ -80,7 +80,6 @@ public class MoveCards : MonoBehaviour
             yield return null;
         }
 
-        // Ensure final position is set
         cardObject.transform.position = targetPosition;
     }
 

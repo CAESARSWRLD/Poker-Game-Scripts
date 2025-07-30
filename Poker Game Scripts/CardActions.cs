@@ -61,15 +61,18 @@ public class Player
     public Card card1 { get; set; }
     public Card card2 { get; set; }
 
+    public bool madeAction { get; set; }
+
     public float stackSize { get; set; }
 
     public int tablepos { get; set; } //(position)
 
-    public Player(Card firstCard, Card secondCard, int pos)
+    public Player(Card firstCard, Card secondCard, int pos, bool madeAction)
     {
         card1 = firstCard;
         card2 = secondCard;
         tablepos = pos;
+        this.madeAction = madeAction;
     }
 }
 
@@ -92,6 +95,8 @@ public class Table
     public int playerCount { get; set; }
 
     public List<Player> players { get; set; }
+
+    int postion { get; set; }
 
     public Table(List<Player> playersAtTable)
     {
@@ -123,7 +128,7 @@ public class CardActions : MonoBehaviour
     public Button raiseButton;
     public Button betButton;
 
-
+    bool handBegun = false;
 
 
     public TMP_InputField playerCountInput;
@@ -134,11 +139,13 @@ public class CardActions : MonoBehaviour
 
     Table table;
 
+    public GameLoopHandler gameLoop;
+
+    int playerCount = 7;
 
     void Start()
     {
 
-        int playerCount = 6;
 
 
 
@@ -207,15 +214,16 @@ public class CardActions : MonoBehaviour
 
 
 
-
         dealButton = GameObject.Find("DealButton").GetComponent<Button>();
-        dealButton.onClick.AddListener(() => beginHand(playerCount, table));
+
+        dealButton.onClick.AddListener(() => beginHand(playerCount));
 
 
         Camera.main.transform.position = new Vector3(0, 0, -10);
         Camera.main.orthographic = true;
 
         //clientFacingBet();
+
     }
 
 
@@ -234,9 +242,33 @@ public class CardActions : MonoBehaviour
         //int stage = 1;
 
 
+        /*if (handBegun)
+        {
+            Debug.Log("Hand Running!");
 
+            foreach(Player p in table.players)
+            {
+                Debug.Log("Player " + p.tablepos + " has cards: " + p.card1.cardObject.name + " and " + p.card2.cardObject.name);
+            }
 
+        }
+        else
+        {
+            Debug.Log("NOPE");
+        }*/
 
+        /*foreach (Player p in table.players)
+        {
+            if (p.madeAction)
+            {
+                Debug.Log("Player " + p.tablepos + " has made an action.");
+            }
+            else
+            {
+                Debug.Log("Player " + p.tablepos + " has NOT made an action.");
+            }
+
+        }*/
     }
 
 
@@ -254,8 +286,10 @@ public class CardActions : MonoBehaviour
 
 
 
-    int beginHand(int numberOfPlayers, Table table)
+    void beginHand(int numberOfPlayers)
     {
+        handBegun = true;
+
 
 
         Debug.Log("Deal button was clicked!");
@@ -288,19 +322,17 @@ public class CardActions : MonoBehaviour
         //create players and give them cards from the deck based on how many players are in the game:
         for (int i = 0; i < numberOfPlayers; i++)
         {
-            Player p = new Player(deck[i], deck[i + numberOfPlayers], i);
+            Player p = new Player(deck[i], deck[i + numberOfPlayers], i, false);
             renderCardstoPlayers(p, i + 1);
             startOf_flop += 2; // each player gets 2 cards
             players.Add(p);
-
         }
 
 
         //DEBUG
         //Debug.Log("Dealt " + cardsDealt + " cards to " + numberOfPlayers + " players.");
 
-        table = new Table(players);
-
+        this.table = new Table(players);
 
 
 
@@ -316,20 +348,39 @@ public class CardActions : MonoBehaviour
 
 
 
+
+
+        table.players.ForEach(p => p.madeAction = false);
+
+
+
+
+        foreach (Player p in table.players)
+        {
+            Debug.Log("ALL PLAYERS:" + p.card1.cardObject);
+            Debug.Log("ALL PLAYERS:" + p.card2.cardObject);
+
+        }
+
+
+
+
+        this.gameLoop = new GameLoopHandler(table, startOf_flop, deck);
+
+        gameLoop.startGameLoop();
+
+
+
         addButtonListener(players, table);
 
         showPlayerInfo(players, table);
 
-        GameLoopHandler gameloop = new GameLoopHandler(table);
 
-        gameloop.startGameLoop();
-
-
-        return startOf_flop;
+        return;
     }
 
 
-    public void renderBoardCards(Board board, int position)
+    void renderBoardCards(List<Card> deck)
     {
 
     }
@@ -424,7 +475,6 @@ public class CardActions : MonoBehaviour
     public void renderButtonstoPlayer(int tablePosition, string previousAction)//the player faces a bet so their options are fold, call and raise. this functions renders those buttons
     {
         renderButtonsAbstraction(previousAction);
-
 
     }
 
@@ -533,6 +583,7 @@ public class CardActions : MonoBehaviour
 
     public void addButtonListener(List<Player> players, Table table)
     {
+
         MoveCards move = gameObject.AddComponent<MoveCards>();
         move.table = table;
 
@@ -540,66 +591,153 @@ public class CardActions : MonoBehaviour
 
 
 
+        gameLoop.printAllPlayerDetails(table);
+
+
+
+
+
+
 
         checkButton.onClick.AddListener(() =>
         {
+
+
             hideButtons();
             renderButtonstoPlayer(whoseTurn, "check");
 
-            Player playerMoving = findCorrespondingPlayer(whoseTurn, table);
-            move.highlightCards(playerMoving);
-            whoseTurn++;
+            Player p = findCorrespondingPlayer(whoseTurn, table);
+            move.highlightCards(p);
+            table.players[whoseTurn - 1].madeAction = true;
+
+            if (whoseTurn == table.players.Count)
+            {
+                whoseTurn = 1;
+            }
+            else
+            {
+                whoseTurn++;
+            }
+
         });
 
         betButton.onClick.AddListener(() =>
         {
+
+
             hideButtons();
 
             renderButtonstoPlayer(whoseTurn, "bet");
 
-            Player playerMoving = findCorrespondingPlayer(whoseTurn, table);
+            Player p = findCorrespondingPlayer(whoseTurn, table);
 
-            move.highlightCards(playerMoving);
-            whoseTurn++;
+            move.highlightCards(p);
+            table.players[whoseTurn - 1].madeAction = true;
+
+
+
+
+            if (whoseTurn == table.players.Count)
+            {
+                whoseTurn = 1;
+            }
+            else
+            {
+                whoseTurn++;
+            }
+
+            //Debug.Log("RUNNING!!!!!!!");
+            gameLoop.setAllPlayerActionsToFalse(table);
+
 
         });
 
         foldButton.onClick.AddListener(() =>
         {
+
+
+
             hideButtons();
 
             renderButtonstoPlayer(whoseTurn, "fold");
 
-            Player playerMoving = findCorrespondingPlayer(whoseTurn, table);
+            Player p = findCorrespondingPlayer(whoseTurn, table);
 
-            move.highlightCards(playerMoving);
-            whoseTurn++;
+            move.highlightCards(p);
+            table.players[whoseTurn - 1].madeAction = true;
+
+
+
+            if (whoseTurn == table.players.Count)
+            {
+                whoseTurn = 1;
+            }
+            else
+            {
+                whoseTurn++;
+            }
+
+
 
         });
 
         callButton.onClick.AddListener(() =>
         {
+
+
+
+
             hideButtons();
 
             renderButtonstoPlayer(whoseTurn, "call");
 
-            Player playerMoving = findCorrespondingPlayer(whoseTurn, table);
+            Player p = findCorrespondingPlayer(whoseTurn, table);
 
-            move.highlightCards(playerMoving);
-            whoseTurn++;
+            move.highlightCards(p);
+            table.players[whoseTurn - 1].madeAction = true;
+
+
+
+            if (whoseTurn == table.players.Count)
+            {
+                whoseTurn = 1;
+            }
+            else
+            {
+                whoseTurn++;
+            }
+
 
         });
 
         raiseButton.onClick.AddListener(() =>
         {
+
+
             hideButtons();
 
             renderButtonstoPlayer(whoseTurn, "raise");
 
-            Player playerMoving = findCorrespondingPlayer(whoseTurn, table);
+            Player p = findCorrespondingPlayer(whoseTurn, table);
 
-            move.highlightCards(playerMoving);
-            whoseTurn++;
+            move.highlightCards(p);
+            table.players[whoseTurn - 1].madeAction = true;
+
+
+
+            if (whoseTurn == table.players.Count)
+            {
+                whoseTurn = 1;
+            }
+            else
+            {
+                whoseTurn++;
+            }
+
+
+            //Debug.Log("RUNNING!!!!!!!");
+
+            gameLoop.setAllPlayerActionsToFalse(table);
 
         });
     }
@@ -609,44 +747,21 @@ public class CardActions : MonoBehaviour
     {
         foreach (Player p in table.players)
         {
-            Debug.Log("Comparing player at position " + (p.tablepos + 1) + " with requested position " + tablePosition + ". Found player: " + p.card1.cardObject.name + " and " + p.card2.cardObject.name);
+            //Debug.Log("Comparing player at position " + (p.tablepos + 1) + " with requested position " + tablePosition + ". Found player: " + p.card1.cardObject.name + " and " + p.card2.cardObject.name);
 
             if (p.tablepos + 1 == tablePosition)
             {
-                Debug.Log("PLAYER FOUND" + "returning player with: " + p.card1.cardObject + " and " + p.card2.cardObject);
+                //Debug.Log("PLAYER FOUND" + "returning player with: " + p.card1.cardObject + " and " + p.card2.cardObject);
                 return p;
             }
         }
 
-        Debug.LogError("No player found at position " + tablePosition);
+        //Debug.LogError("No player found at position " + tablePosition);
         return null; // or throw an exception
     }
 
 
-    /* public bool check()
-     {
 
-     }
-
-     public bool bet()
-     {
-
-     }
-
-     public bool fold()
-     {
-
-     }
-
-     public bool call()
-     {
-
-     }
-
-     public bool raise()
-     {
-
-     }*/
 
 
 }
