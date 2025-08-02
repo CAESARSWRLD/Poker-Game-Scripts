@@ -16,6 +16,12 @@ next player at the table gets to make their move. There is not yet a board
 of cards that come out after players make their actions.
 
 
+8-2-25
+Added rendering flop to screen
+
+
+
+
 Features to add:
 -Vote to kick
 -"Show me one card?"
@@ -79,14 +85,22 @@ public class Player
 public class Board
 {
 
-    Card flop1 { get; set; }
-    Card flop2 { get; set; }
-    Card flop3 { get; set; }
+    public Card flop1 { get; set; }
+    public Card flop2 { get; set; }
+    public Card flop3 { get; set; }
 
-    Card turn { get; set; }
+    public Card turn { get; set; }
 
-    Card river { get; set; }
+    public Card river { get; set; }
 
+    public Board(Card flop1, Card flop2, Card flop3, Card turn, Card river)
+    {
+        this.flop1 = flop1;
+        this.flop2 = flop2;
+        this.flop3 = flop3;
+        this.turn = turn;
+        this.river = river;
+    }
 }
 
 public class Table
@@ -107,14 +121,7 @@ public class Table
 
 }
 
-public class Action
-{
-    string[] facingAction { get; set; }
 
-
-
-
-}
 
 
 public class CardActions : MonoBehaviour
@@ -134,7 +141,7 @@ public class CardActions : MonoBehaviour
     public TMP_InputField playerCountInput;
 
 
-    List<Card> deck = new List<Card>();//list for cards in the deck
+    private List<Card> deck = new List<Card>();//list for cards in the deck
 
 
     Table table;
@@ -143,34 +150,12 @@ public class CardActions : MonoBehaviour
 
     int playerCount = 7;
 
+    int startOf_flop = 0;
+
     void Start()
     {
 
-
-
-
         hideButtons();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         Debug.Log("Creating cards...");
 
@@ -212,66 +197,84 @@ public class CardActions : MonoBehaviour
             }
         }
 
-
-
         dealButton = GameObject.Find("DealButton").GetComponent<Button>();
-
         dealButton.onClick.AddListener(() => beginHand(playerCount));
-
 
         Camera.main.transform.position = new Vector3(0, 0, -10);
         Camera.main.orthographic = true;
-
-        //clientFacingBet();
-
     }
 
+    public int actionsMade;
+    bool preFlopHasRun = false;
+    bool flopHasRun = false;
+    bool turnHasRun = false;
+    bool riverHasRun = false;
 
     void Update()
     {
 
-        //STAGES:
-        //-preflop(1)
-        //-flop(2)
-        //-turn(3)
-        //-river(4)
-
-        // Check if the player count input field has changed
-
-
-        //int stage = 1;
-
-
-        /*if (handBegun)
+        if ((actionsMade >= table.players.Count) && !preFlopHasRun)
         {
-            Debug.Log("Hand Running!");
+            Debug.Log("ALL PREFLOP ACTIONS MADE");
 
-            foreach(Player p in table.players)
-            {
-                Debug.Log("Player " + p.tablepos + " has cards: " + p.card1.cardObject.name + " and " + p.card2.cardObject.name);
-            }
+            renderFlop(deck, startOf_flop);
 
+            preFlopHasRun = true;
         }
-        else
-        {
-            Debug.Log("NOPE");
-        }*/
 
-        /*foreach (Player p in table.players)
-        {
-            if (p.madeAction)
-            {
-                Debug.Log("Player " + p.tablepos + " has made an action.");
-            }
-            else
-            {
-                Debug.Log("Player " + p.tablepos + " has NOT made an action.");
-            }
 
-        }*/
     }
 
+    public void renderFlop(List<Card> deck, int start)
+    {
+        Card f1 = deck[start + 1];
+        Card f2 = deck[start + 2];
+        Card f3 = deck[start + 3];
+        Card f4 = deck[start + 4];
+        Card f5 = deck[start + 5];
 
+        Debug.Log("Rendering flop with cards: " + f1.cardObject.name + ", " + f2.cardObject.name + ", " + f3.cardObject.name);
+
+        renderCardToBoard(f1, 1);
+        renderCardToBoard(f2, 2);
+        renderCardToBoard(f3, 3);
+
+
+    }
+
+    public void renderCardToBoard(Card cardToRender, int position)
+    {
+        cardToRender.cardObject.SetActive(true);
+        cardToRender.cardObject.GetComponent<Renderer>().enabled = true;
+
+        SpriteRenderer f1sprite = cardToRender.cardObject.GetComponent<SpriteRenderer>();
+        f1sprite.sortingLayerName = "Cards";
+        f1sprite.sortingOrder = 2;
+
+        cardToRender.cardObject.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+
+        switch (position)
+        {
+            case 1:
+                cardToRender.cardObject.transform.position = new Vector3(-2.5f, 0, 0);
+                break;
+            case 2:
+                cardToRender.cardObject.transform.position = new Vector3(-1.25f, 0, 0);
+                break;
+            case 3:
+                cardToRender.cardObject.transform.position = new Vector3(0, 0, 0);
+                break;
+            case 4:
+                cardToRender.cardObject.transform.position = new Vector3(1.25f, 0, 0);
+                break;
+            case 5:
+                cardToRender.cardObject.transform.position = new Vector3(2.5f, 0, 0);
+                break;
+            default:
+
+                return;
+        }
+    }
 
 
     void ShuffleDeck()
@@ -317,7 +320,6 @@ public class CardActions : MonoBehaviour
         List<Player> players = new List<Player>();
 
 
-        int startOf_flop = 0;//track number of cards dealt to know when the flop starts afterwards
 
         //create players and give them cards from the deck based on how many players are in the game:
         for (int i = 0; i < numberOfPlayers; i++)
@@ -365,9 +367,9 @@ public class CardActions : MonoBehaviour
 
 
 
-        this.gameLoop = new GameLoopHandler(table, startOf_flop, deck);
+        this.gameLoop = new GameLoopHandler(table, startOf_flop, deck, true);
 
-        gameLoop.startGameLoop();
+        gameLoop.startGameLoop(1);
 
 
 
@@ -380,10 +382,7 @@ public class CardActions : MonoBehaviour
     }
 
 
-    void renderBoardCards(List<Card> deck)
-    {
 
-    }
 
     public void renderCardstoPlayers(Player player, int position)
     {
@@ -601,7 +600,7 @@ public class CardActions : MonoBehaviour
 
         checkButton.onClick.AddListener(() =>
         {
-
+            actionsMade++;
 
             hideButtons();
             renderButtonstoPlayer(whoseTurn, "check");
@@ -623,6 +622,7 @@ public class CardActions : MonoBehaviour
 
         betButton.onClick.AddListener(() =>
         {
+            actionsMade = 1;
 
 
             hideButtons();
@@ -647,13 +647,14 @@ public class CardActions : MonoBehaviour
             }
 
             //Debug.Log("RUNNING!!!!!!!");
-            gameLoop.setAllPlayerActionsToFalse(table);
+            gameLoop.setAllPlayerActionsToFalse(table, table.players[whoseTurn - 1]);
 
 
         });
 
         foldButton.onClick.AddListener(() =>
         {
+            actionsMade++;
 
 
 
@@ -683,6 +684,7 @@ public class CardActions : MonoBehaviour
 
         callButton.onClick.AddListener(() =>
         {
+            actionsMade++;
 
 
 
@@ -712,6 +714,7 @@ public class CardActions : MonoBehaviour
 
         raiseButton.onClick.AddListener(() =>
         {
+            actionsMade = 1;
 
 
             hideButtons();
@@ -723,6 +726,7 @@ public class CardActions : MonoBehaviour
             move.highlightCards(p);
             table.players[whoseTurn - 1].madeAction = true;
 
+            gameLoop.setAllPlayerActionsToFalse(table, table.players[whoseTurn - 1]);
 
 
             if (whoseTurn == table.players.Count)
@@ -737,7 +741,6 @@ public class CardActions : MonoBehaviour
 
             //Debug.Log("RUNNING!!!!!!!");
 
-            gameLoop.setAllPlayerActionsToFalse(table);
 
         });
     }

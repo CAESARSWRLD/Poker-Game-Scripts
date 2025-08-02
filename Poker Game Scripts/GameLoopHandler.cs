@@ -14,41 +14,65 @@ public class GameLoopHandler
     public Table table;
     int startFlop = 0;
     public List<Card> deck;
-    //public bool roundRunning;
+    public bool handRunning;
+
 
     public GameLoopHandler()
     {
 
     }
 
-    public GameLoopHandler(Table table, int startFlop, List<Card> deck)
+    public GameLoopHandler(Table table, int startFlop, List<Card> deck, bool handRunning)
     {
         this.table = table;
         this.startFlop = startFlop;
         this.deck = deck;
-        //this.roundRunning = roundRunning;
+        this.handRunning = handRunning;
     }
 
 
 
-    public void startGameLoop()
+    public void startGameLoop(int handPhase)
     {
-        Debug.Log("Game loop started.");
-        // Initialize game state, players, etc.
-
         Debug.Log("Starting game loop with " + table.players.Count + " players. And with the flop:" + deck[(startFlop + 2)].cardObject + " " + deck[(startFlop + 3)].cardObject + " " + deck[(startFlop + 4)].cardObject);
 
-
-        bool roundRunning = true;
-
-        if (table.players[0].madeAction)
+        /*while (handRunning)
         {
-            Debug.Log("Player 1 made action!");
-        }
-        else
-        {
-            Debug.Log("NOPE");
-        }
+
+
+            switch (handPhase)
+            {
+                case 1:
+
+                    Debug.Log("PREFLOP");
+                    break;
+
+                case 2:
+
+                    Debug.Log("FLOP");
+
+                    break;
+
+                case 3:
+
+                    Debug.Log("TURN");
+
+                    break;
+
+                default:
+
+                    Debug.Log("RIVER");
+
+                    break;
+
+            }
+        }*/
+        // Initialize game state, players, etc.
+
+
+        //Debug.Log("GAME LOOP ENDED");
+
+
 
     }
 
@@ -64,13 +88,17 @@ public class GameLoopHandler
         return false;
     }
 
-    public void setAllPlayerActionsToFalse(Table table)
+    public void setAllPlayerActionsToFalse(Table table, Player cur)
     {
         foreach (Player p in table.players)
         {
-            Debug.Log("Setting madeAction to false for player at pos: " + p.tablepos + ", instance ID: " + p.GetHashCode());
+            if (p != cur)
+            {
+                Debug.Log("Setting madeAction to false for player at pos: " + p.tablepos + ", instance ID: " + p.GetHashCode());
 
-            p.madeAction = false;
+                p.madeAction = false;
+            }
+
         }
         Debug.Log("All player actions set to false.");
     }
@@ -95,5 +123,12 @@ public class GameLoopHandler
         }
 
         Debug.Log("=======================");
+    }
+
+
+
+    public void progressGame()
+    {
+
     }
 }
