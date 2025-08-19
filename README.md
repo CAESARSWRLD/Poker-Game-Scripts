@@ -23,6 +23,13 @@ Added rendering flop to screen
 
 
 Features to add:
+
+IMPORTANT
+-Proper game logic
+-Networking/Multiplayer
+
+
+LATER
 -Vote to kick
 -"Show me one card?"
 -"Run it once or twice?"
