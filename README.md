@@ -9,11 +9,17 @@ top of what I currently have.
 
 I've included too much code in this CardActions.cs file so I'll have to re-organize 
 at some point to make it more readable and easy to work with for others or myself in 
-the future of course. However, I don't plan on outsourcing any work any time soon.
+the future of course. However, I don't plan on outsourcing any work.
 
 So far I have buttons and players take turns making their move using the buttons. After that the 
 next player at the table gets to make their move. There is not yet a board 
 of cards that come out after players make their actions.
+
+
+8-2-25
+Added rendering flop to screen
+
+
 
 
 Features to add:
